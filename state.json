@@ -1,1 +1,1 @@
-{"state": "UP", "detail": "All 22 containers up", "at": "2026-08-30T19:26:13Z"}
+{"state": "DOWN", "detail": "\u26a0\ufe0f CRITICAL: searxng | Down: searxng", "at": "2026-08-30T19:27:57Z"}
