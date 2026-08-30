@@ -26,6 +26,7 @@ def evaluate():
     if err:
         return {"ok": False, "error": "docker_unreachable", "detail": err}
     down, critical_down, total = [], [], 0
+    all_containers = []
     for c in conts:
         name = c.get("Names", [""])[0].lstrip("/")
         if not name:
@@ -34,12 +35,15 @@ def evaluate():
         state = c.get("State", "?")
         health = (c.get("Health") or {}).get("Status") if c.get("Health") else None
         is_down = state != "running" or health == "unhealthy"
+        all_containers.append({"name": name, "state": state,
+                               "health": health or "", "down": is_down})
         if is_down:
             down.append(name)
             if name in CRIT:
                 critical_down.append(name)
     return {"ok": len(down) == 0, "total": total, "up": total - len(down),
             "down": down, "critical_down": critical_down,
+            "containers": all_containers,
             "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())}
 
 from http.server import BaseHTTPRequestHandler, HTTPServer

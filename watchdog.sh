@@ -8,13 +8,14 @@ BASE=$(cat base.txt 2>/dev/null || echo 000)
 PREV=$(cat state.json 2>/dev/null || echo '{"state":"UNKNOWN"}')
 
 now() { date -u +%Y-%m-%dT%H:%M:%SZ; }
+NL=$'\n'   # real newline for Telegram
 
 send() {
   local text="$1"
   curl -sS --max-time 15 -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
     -d "chat_id=${TELEGRAM_CHAT_ID}" \
-    -d "text=${text}" \
-    -d "parse_mode=Markdown" >/dev/null 2>&1 || echo "TELEGRAM_SEND_FAILED"
+    --data-urlencode "text=${text}" \
+    -d "parse_mode=HTML" >/dev/null 2>&1 || echo "TELEGRAM_SEND_FAILED"
 }
 
 # Parse report.json with python3 (json stdlib — works everywhere, no jq dep)
@@ -36,6 +37,23 @@ PY
 )
 EOF
 
+# Build the full container status list (legend: 🟢 up, 🔴 down)
+CLIST=$(python3 - <<'PY'
+import json
+try:
+    d = json.load(open("report.json"))
+    conts = d.get("containers", [])
+except Exception:
+    conts = []
+lines = []
+for c in sorted(conts, key=lambda x: x["name"]):
+    mark = "🟢" if not c["down"] else "🔴"
+    health = f" ({c['health']})" if c.get("health") else ""
+    lines.append(f"{mark} {c['name']}{health}")
+print("\n".join(lines) if lines else "— no data —")
+PY
+)
+
 NEW_STATE="UNKNOWN"
 DETAIL=""
 
@@ -53,20 +71,33 @@ elif [ "$ERR" = "docker_unreachable" ]; then
   DETAIL="healthd cannot reach docker daemon"
 else
   NEW_STATE="DOWN"
-  DETAIL="Down: ${DOWN}"
-  [ -n "$CRIT" ] && DETAIL="⚠️ CRITICAL: ${CRIT} | ${DETAIL}"
+  NDOWN=$(echo "$DOWN" | tr ',' '\n' | grep -c . || true)
+  DETAIL="⬇️ Down (${NDOWN}): ${DOWN}"
+  [ -n "$CRIT" ] && DETAIL="${DETAIL}${NL}⚠️ CRITICAL: ${CRIT}"
 fi
 
 OLD_STATE=$(python3 -c 'import json;print(json.loads("""'"$PREV"'""").get("state","UNKNOWN"))' 2>/dev/null || echo "UNKNOWN")
 
 if [ "$OLD_STATE" != "$NEW_STATE" ]; then
   case "$NEW_STATE" in
-    UP)           MSG="✅ *HOMELAB RECOVERED*\n${DETAIL}\n⏱ $(now)" ;;
-    POWER_OUT)    MSG="🚨 *HOMELAB UNREACHABLE*\n${DETAIL}\n⏱ $(now)" ;;
-    HEALTHD_DOWN) MSG="⚠️ *HEALTHD DOWN*\n${DETAIL}\n⏱ $(now)" ;;
-    DOCKER_UNREACHABLE) MSG="⚠️ *DOCKER DAEMON UNREACHABLE*\n${DETAIL}\n⏱ $(now)" ;;
-    DOWN)         MSG="🚨 *CONTAINER(S) DOWN*\n${DETAIL}\n⏱ $(now)" ;;
-    *)            MSG="❓ *UNKNOWN STATE* ${NEW_STATE}\n${DETAIL}\n⏱ $(now)" ;;
+    UP)
+      MSG="✅ <b>HOMELAB RECOVERED</b>${NL}${DETAIL}${NL}${NL}📋 <b>All containers (${TOTAL})</b>:${NL}${CLIST}${NL}⏱ $(now)"
+      ;;
+    POWER_OUT)
+      MSG="🚨 <b>HOMELAB UNREACHABLE</b>${NL}${DETAIL}${NL}⏱ $(now)"
+      ;;
+    HEALTHD_DOWN)
+      MSG="⚠️ <b>HEALTHD DOWN</b>${NL}${DETAIL}${NL}⏱ $(now)"
+      ;;
+    DOCKER_UNREACHABLE)
+      MSG="⚠️ <b>DOCKER DAEMON UNREACHABLE</b>${NL}${DETAIL}${NL}⏱ $(now)"
+      ;;
+    DOWN)
+      MSG="🚨 <b>CONTAINER(S) DOWN</b>${NL}${DETAIL}${NL}${NL}📋 <b>All containers (${TOTAL})</b>:${NL}${CLIST}${NL}⏱ $(now)"
+      ;;
+    *)
+      MSG="❓ <b>UNKNOWN STATE</b> ${NEW_STATE}${NL}${DETAIL}${NL}⏱ $(now)"
+      ;;
   esac
   send "$MSG" || true
 fi
