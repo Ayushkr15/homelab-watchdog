@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Homelab watchdog: classify homelab health from report.json + code.txt,
+# Homelab watchdog v3: classify homelab health from report.json + code.txt,
 # send Telegram alert ONLY on state change, keep state.json committed.
 set -u
 
