@@ -3,6 +3,11 @@ on:
   schedule:
     - cron: "*/5 * * * *"
   workflow_dispatch: {}
+  push:
+    paths:
+      - "watchdog.sh"
+      - ".github/workflows/**"
+      - "healthd/**"
 
 permissions:
   contents: write
