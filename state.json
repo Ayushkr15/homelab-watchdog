@@ -1,1 +1,1 @@
-{"state": "UNKNOWN", "detail": "initial", "at": "2026-08-30T00:00:00Z"}
+{"state": "DOWN", "detail": "\u2b07\ufe0f Down (1): searxng\n\u26a0\ufe0f CRITICAL: searxng", "at": "2026-08-30T19:35:09Z"}
