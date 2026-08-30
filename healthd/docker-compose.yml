@@ -1,0 +1,16 @@
+services:
+  healthd:
+    build: .
+    container_name: healthd
+    restart: unless-stopped
+    network_mode: host
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    environment:
+      - CRITICAL_SERVICES=searxng,openviking
+      - AUTH_TOKEN=${HEALTHD_TOKEN:?set HEALTHD_TOKEN in .env}
+    mem_limit: 64m
+    cpus: 0.1
+    logging:
+      driver: json-file
+      options: {max-size: "10m", max-file: "3", compress: "true"}

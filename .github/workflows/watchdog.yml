@@ -1,0 +1,31 @@
+name: homelab-watchdog
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Probe homelab
+        id: probe
+        env:
+          TOKEN: ${{ secrets.HEALTHD_TOKEN }}
+          BASE: https://health.mymaker.in/healthz
+        run: |
+          curl -sS --max-time 20 -o report.json -w "%{http_code}" \
+            "${BASE}?token=${TOKEN}" > code.txt || echo 000 > code.txt
+          # also check base site to distinguish power-cut vs healthd-down
+          curl -sS --max-time 15 -o /dev/null -w "%{http_code}" \
+            https://mymaker.in/ > base.txt || echo 000 > base.txt
+          echo "code=$(cat code.txt) base=$(cat base.txt)"
+      - name: Classify and alert
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: bash watchdog.sh
