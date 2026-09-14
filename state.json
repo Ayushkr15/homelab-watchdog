@@ -1,1 +1,1 @@
-{"state": "DOWN", "detail": "\u2b07\ufe0f Down (5): microcks,microcks-sso,microcks-db,microcks-postman-runtime,mock-api", "at": "2026-09-14T06:56:22Z"}
+{"state": "DOWN", "detail": "\u2b07\ufe0f Down (12): searxng,firecrawl-api-1,syncthing,openviking,hermes,filebrowser,immich_server,microcks,microcks-sso,microcks-db,microcks-postman-runtime,mock-api\n\u26a0\ufe0f CRITICAL: searxng,openviking", "at": "2026-09-14T13:38:23Z"}
