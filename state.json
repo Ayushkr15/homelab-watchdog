@@ -1,1 +1,1 @@
-{"state": "UP", "detail": "All 26 containers up", "at": "2026-09-19T01:34:45Z"}
+{"state": "DOWN", "detail": "\u2b07\ufe0f Down (7): searxng,immich_server,firecrawl-api-1,hermes,openviking,microcks,microcks-sso\n\u26a0\ufe0f CRITICAL: searxng,openviking", "at": "2026-09-19T06:33:16Z"}
